@@ -16,11 +16,11 @@ output_dir = "CNratio_GS20_30_XGBoost_outputs"
 os.makedirs(output_dir, exist_ok=True)
 
 input_features = [
-    "state", "growing_days", "N_rate_fall.kg_ha", "N_rate_spring.kg_ha", "zone",
+    "growing_days", "N_rate_fall.kg_ha", "N_rate_spring.kg_ha", "zone",
     "GS0_20avgTavg", "GS0_20avgSrad", "GS0_20cRain", "GS0_20cGDD",
     "GS20_30avgTavg", "GS20_30avgSrad", "GS20_30cRain", "GS20_30cGDD",
-    "FallcumGDD", "SpringcumGDD", "TotalcumGDD",
-    "OM (%/100)", "Sand", "Silt", "Clay", "awc",
+    "FallcumGDD", "SpringcumGDD",
+    "OM (%/100)", "Sand", "Silt", "Clay", 
     "legume_preceding", "planting_method"
 ]
 
