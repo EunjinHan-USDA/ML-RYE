@@ -10,9 +10,9 @@ import os
 # --------------------------------------------------
 # 1. LOAD DATA
 # --------------------------------------------------
-df = pd.read_csv("/Users/utsabghimire/Downloads/SCINet/Updated_rye_datbase_format_all_data/July26_Omit_Yes_667_Rows_with_Biomass_and_CN_Ratio_Averaged.csv")
+df = pd.read_csv("/Users/utsabghimire/Downloads/SCINet/Updated_rye_datbase_format_all_data/July26_Omit_Yes_and_Maybe_646_Rows_with_Biomass_and_CN_Ratio_Averaged_7.csv")
 
-output_dir = "CNratio_yes_GS20_30_XGBoost_outputs"
+output_dir = "CNratio_GS20_30_XGBoost_outputs"
 os.makedirs(output_dir, exist_ok=True)
 
 input_features = [
