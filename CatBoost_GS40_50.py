@@ -15,9 +15,11 @@ df = pd.read_csv("/Users/utsabghimire/Downloads/SCINet/Updated_rye_datbase_forma
 output_dir = "Biomass_yesNMAYBE_GS40_50_aug7_outputs"
 os.makedirs(output_dir, exist_ok=True)
 
+#Removed cgdd and avgtemperatures to reduce number of features and those features are already accounted in FallcumGDD and SpringcumGDD
+
 input_features = [
-     "growing_days", "N_rate_fall.kg_ha", "N_rate_spring.kg_ha", "zone", "GS0_20avgTavg", "GS0_20avgSrad", "GS0_20cRain", "GS0_20cGDD",
-    "GS20_30avgTavg", "GS20_30avgSrad", "GS20_30cRain", "GS20_30cGDD", "GS30_40avgTavg", "GS30_40avgSrad", "GS30_40cRain", "GS30_40cGDD", "GS40_50avgTavg", "GS40_50avgSrad", "GS40_50cRain", "GS40_50cGDD",
+     "growing_days", "N_rate_fall.kg_ha", "N_rate_spring.kg_ha", "zone", "GS0_20avgSrad", "GS0_20cRain", 
+    "GS20_30avgSrad", "GS20_30cRain",   "GS30_40avgSrad", "GS30_40cRain",  "GS40_50avgSrad", "GS40_50cRain", 
     "FallcumGDD", "SpringcumGDD",
     "OM (%/100)", "Sand", "Silt", "Clay", 
     "legume_preceding", "planting_method"
