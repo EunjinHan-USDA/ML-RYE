@@ -1,4 +1,4 @@
-# ---------- MUST BE FIRST: single-thread math & stable hashing for cross-OS determinism ----------
+# ---------- MUST BE FIRST: single-thread math and stable hashing for cross-OS determinism ----------
 import os
 os.environ["PYTHONHASHSEED"] = "0"
 os.environ["OMP_NUM_THREADS"] = "1"
