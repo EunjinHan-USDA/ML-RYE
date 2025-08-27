@@ -7,7 +7,7 @@ from statsmodels.stats.outliers_influence import variance_inflation_factor
 # ───────────────────────────────────────────────
 # 1. Load Data
 # ───────────────────────────────────────────────
-df = pd.read_csv("/Users/utsabghimire/Downloads/SCINet/Updated_rye_datbase_format_all_data/July26_Omit_Yes_and_Maybe_646_Rows_with_Biomass_and_CN_Ratio_Averaged.csv")
+df = pd.read_csv("/Users/utsabghimire/Downloads/SCINet/Updated_rye_datbase_format_all_data/July26_Omit_Yes_and_Maybe_646_Rows_with_Biomass_and_CN_Ratio_Averaged_7.csv")
 
 # ───────────────────────────────────────────────
 # 2. Define Feature Groups
@@ -40,7 +40,7 @@ groups = {
 # ───────────────────────────────────────────────
 # 3. Create Output Directory
 # ───────────────────────────────────────────────
-output_dir = "Grouped_VIF"
+output_dir = "Grouped_VIFaug28_outputs"
 os.makedirs(output_dir, exist_ok=True)
 
 # ───────────────────────────────────────────────
@@ -60,10 +60,12 @@ def calculate_vif_and_plot(df, features, group_name):
     # Plot
     plt.figure(figsize=(8, 5))
     sns.barplot(x="VIF", y="Feature", data=vif_df.sort_values("VIF", ascending=True), palette="crest")
-    plt.title(f"VIF for {group_name.capitalize()} Variables", fontsize=14)
+    plt.title(f"VIF for {group_name.capitalize()} Variables", fontsize=14, fontweight='bold')
     plt.axvline(10, color='red', linestyle='--', label="VIF = 10 Threshold")
-    plt.xlabel("VIF")
-    plt.ylabel("Feature")
+    plt.xticks(fontsize=14, fontweight='bold')
+    plt.yticks(fontsize=14, fontweight='bold')
+    plt.xlabel("VIF", fontsize=14, fontweight='bold')
+    plt.ylabel("Feature", fontsize=14, fontweight='bold')
     plt.legend()
     plt.tight_layout()
     plt.savefig(os.path.join(output_dir, f"VIF_{group_name}.png"), dpi=300)
