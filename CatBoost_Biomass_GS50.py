@@ -1,4 +1,4 @@
-# ---------- MUST BE FIRST: single-thread math and stable hashing for cross-OS determinism ----------
+# ---------- MUST BE FIRST: single-thread math & stable hashing for cross-OS determinism ----------
 import os
 os.environ["PYTHONHASHSEED"] = "0"
 os.environ["OMP_NUM_THREADS"] = "1"
@@ -37,7 +37,7 @@ plt.rcParams.update({
 # PATHS & INPUTS
 # =========================
 CSV_PATH = "/Users/utsabghimire/Downloads/SCINet/Updated_rye_datbase_format_all_data/July26_Omit_Yes_and_Maybe_646_Rows_with_Biomass_and_CN_Ratio_Averaged_7.csv"
-OUTPUT_DIR = "AUG25_Biomass_yesNMAYBE_GS50_CatBOOST_outputss"
+OUTPUT_DIR = "AUG26_Biomass_yesNMAYBE_GS50_CatBOOST_outputss"
 os.makedirs(OUTPUT_DIR, exist_ok=True)
 
 INPUT_FEATURES = [
@@ -48,7 +48,7 @@ INPUT_FEATURES = [
     "GS40_50avgSrad", "GS40_50cRain",
     "GS50avgSrad", "GS50cRain",
     "FallcumGDD", "SpringcumGDD",
-    "OM (%/100)", "Sand", "Silt", "Clay",
+    "OM (%/100)", "Sand",  "Clay",
     "legume_preceding", "planting_method"
 ]
 CAT_FEATURES = ["zone", "legume_preceding", "planting_method"]
@@ -152,6 +152,54 @@ pd.DataFrame([{
     "pinball_q50": pinball_loss(results_df["actual_biomass"], results_df["pred_50th"], 0.5),
     "pinball_q90": pinball_loss(results_df["actual_biomass"], results_df["pred_90th"], 0.9)
 }]).to_csv(os.path.join(OUTPUT_DIR, "metrics_reproducible.csv"), index=False)
+
+# ===== TRAIN predictions & metrics (median, q=0.5) =====
+train_pred_50 = models[0.5].predict(train_pool)
+
+rmse_tr = float(np.sqrt(mean_squared_error(y_train, train_pred_50)))
+mae_tr  = float(mean_absolute_error(y_train, train_pred_50))
+r2_tr   = float(r2_score(y_train, train_pred_50))
+pct_rmse_tr = 100.0 * rmse_tr / float(y_train.mean())
+
+print(f"\n📊 [TRAIN] RMSE: {rmse_tr:.4f}, MAE: {mae_tr:.4f}, R2: {r2_tr:.3f}, %RMSE: {pct_rmse_tr:.2f}%")
+
+# Save a combined metrics file (train + test)
+metrics_train_test = pd.DataFrame([
+    {"split": "train", "rmse": rmse_tr, "mae": mae_tr, "r2": r2_tr, "pct_rmse": pct_rmse_tr},
+    {"split": "test",  "rmse": rmse,    "mae": mae,    "r2": r2,    "pct_rmse": pct_rmse}
+])
+metrics_train_test.to_csv(os.path.join(OUTPUT_DIR, "metrics_train_test.csv"), index=False)
+
+# ===== 1:1 Plot — TEST (median) =====
+plt.figure(figsize=(8, 8))
+plt.scatter(results_df["actual_biomass"], results_df["pred_50th"],
+            edgecolor="black", facecolor="dodgerblue", alpha=0.7, s=60)
+min_t = min(results_df["actual_biomass"].min(), results_df["pred_50th"].min())
+max_t = max(results_df["actual_biomass"].max(), results_df["pred_50th"].max())
+plt.plot([min_t, max_t], [min_t, max_t], color="red", linestyle="--", linewidth=2, label="1:1 Line")
+plt.xlabel("Observed Biomass (kg/ha)")
+plt.ylabel("Predicted Biomass (kg/ha)")
+plt.title("1:1 Plot (Test Set, Median Prediction)")
+plt.legend(); plt.grid(True, linestyle="--", alpha=0.4)
+plt.tight_layout()
+plt.savefig(os.path.join(OUTPUT_DIR, "median_prediction_1to1_test.png"), dpi=300)
+plt.close()
+
+# ===== 1:1 Plot — TRAIN (median) =====
+plt.figure(figsize=(8, 8))
+plt.scatter(y_train, train_pred_50,
+            edgecolor="black", facecolor="dodgerblue", alpha=0.7, s=60)
+min_tr = min(y_train.min(), train_pred_50.min())
+max_tr = max(y_train.max(), train_pred_50.max())
+plt.plot([min_tr, max_tr], [min_tr, max_tr], color="red", linestyle="--", linewidth=2, label="1:1 Line")
+plt.xlabel("Observed Biomass (kg/ha)")
+plt.ylabel("Predicted Biomass (kg/ha)")
+plt.title("1:1 Plot (Train Set, Median Prediction)")
+plt.legend(); plt.grid(True, linestyle="--", alpha=0.4)
+plt.tight_layout()
+plt.savefig(os.path.join(OUTPUT_DIR, "median_prediction_1to1_train.png"), dpi=300)
+plt.close()
+
 
 # =========================
 # UNCERTAINTY PLOT (bold styling)
