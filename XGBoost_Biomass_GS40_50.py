@@ -40,7 +40,7 @@ plt.rcParams.update({
 # PATHS & INPUTS
 # =========================
 csv_path = "/Users/utsabghimire/Downloads/SCINet/Updated_rye_datbase_format_all_data/July26_Omit_Yes_and_Maybe_646_Rows_with_Biomass_and_CN_Ratio_Averaged_7.csv"
-output_dir = "Aug25_Biomass_yesnmaybe_GS40_50_XGBoost_outputs"
+output_dir = "Aug26_Biomass_yesnmaybe_GS40_50_XGBoost_outputs"
 os.makedirs(output_dir, exist_ok=True)
 
 input_features = [
@@ -50,7 +50,7 @@ input_features = [
     "GS30_40avgSrad", "GS30_40cRain",
     "GS40_50avgSrad", "GS40_50cRain",
     "FallcumGDD", "SpringcumGDD",
-    "OM (%/100)", "Sand", "Silt", "Clay",
+    "OM (%/100)", "Sand",  "Clay",
     "legume_preceding", "planting_method"
 ]
 cat_features = ["zone", "legume_preceding", "planting_method"]
@@ -127,14 +127,19 @@ print("hash y_test :", md5(y_test.values))
 # XGBOOST (DETERMINISTIC, EXACT)
 # =========================
 model = XGBRegressor(
-    n_estimators=500,
-    learning_rate=0.1,
-    max_depth=6,
-    subsample=1.0,            # no stochastic row sampling
-    colsample_bytree=1.0,     # no stochastic column sampling
+    n_estimators=500,            
+    learning_rate=0.05,
+    max_depth=2,
+    min_child_weight=10,
+    subsample=0.90,
+    colsample_bytree=0.80,
+    reg_alpha=0.5,
+    reg_lambda=4.0,
+    gamma=0.10,
+    objective="reg:squarederror",
     random_state=SEED,
-    n_jobs=1,                 # single-thread = stable reductions
-    tree_method="exact",      # fully deterministic on CPU
+    n_jobs=1,
+    tree_method="exact",
     verbosity=0,
 )
 model.fit(X_train, y_train)
@@ -148,7 +153,7 @@ mae = float(mean_absolute_error(y_test, y_pred))
 r2 = float(r2_score(y_test, y_pred))
 pct_rmse = 100.0 * rmse / float(y_test.mean())
 
-print(f"\n📊 RMSE: {rmse:.4f}, MAE: {mae:.4f}, R2: {r2:.3f}, %RMSE: {pct_rmse:.2f}%")
+print(f"\n📊 [TEST]RMSE: {rmse:.4f}, MAE: {mae:.4f}, R2: {r2:.3f}, %RMSE: {pct_rmse:.2f}%")
 
 pred_df = pd.DataFrame({"actual_biomass": y_test.values, "predicted_biomass": y_pred})
 pred_df.to_csv(os.path.join(output_dir, "predictions.csv"), index=False)
@@ -158,6 +163,28 @@ metrics_df = pd.DataFrame([{
     "rmse": rmse, "mae": mae, "r2": r2, "pct_rmse": pct_rmse
 }])
 metrics_df.to_csv(os.path.join(output_dir, "metrics_reproducible.csv"), index=False)
+
+# ===== TRAIN predictions & metrics =====
+y_pred_train = model.predict(X_train)
+
+rmse_tr = float(np.sqrt(mean_squared_error(y_train, y_pred_train)))
+mae_tr  = float(mean_absolute_error(y_train, y_pred_train))
+r2_tr   = float(r2_score(y_train, y_pred_train))
+pct_rmse_tr = 100.0 * rmse_tr / float(y_train.mean())
+
+print(f"\n📊 [TRAIN] RMSE: {rmse_tr:.4f}, MAE: {mae_tr:.4f}, R2: {r2_tr:.3f}, %RMSE: {pct_rmse_tr:.2f}%")
+
+# Save train predictions (optional, useful for Supplementary)
+pred_train_df = pd.DataFrame({"actual_biomass": y_train.values, "predicted_biomass": y_pred_train})
+pred_train_df.to_csv(os.path.join(output_dir, "predictions_train.csv"), index=False)
+
+# Save combined metrics (train + test) in one table
+metrics_train_test = pd.DataFrame([
+    {"split": "train", "rmse": rmse_tr, "mae": mae_tr, "r2": r2_tr, "pct_rmse": pct_rmse_tr},
+    {"split": "test",  "rmse": rmse,    "mae": mae,    "r2": r2,    "pct_rmse": pct_rmse}
+])
+metrics_train_test.to_csv(os.path.join(output_dir, "metrics_train_test.csv"), index=False)
+
 
 # =========================
 # 1:1 PLOT (bold/large)
@@ -172,11 +199,28 @@ plt.plot([vmin, vmax], [vmin, vmax], "r--", linewidth=2, label="1:1 Line")
 
 plt.xlabel("Observed Biomass (kg/ha)")
 plt.ylabel("Predicted Biomass (kg/ha)")
-plt.title("Observed vs Predicted Biomass")
+plt.title("Observed vs Predicted Biomass (Test Set)")
 plt.legend(fontsize=12, frameon=True)
 plt.grid(True, linestyle="--", alpha=0.3)
 plt.tight_layout()
-plt.savefig(os.path.join(output_dir, "observed_vs_predicted_1to1.png"), dpi=300)
+plt.savefig(os.path.join(output_dir, "train_observed_vs_predicted_1to1.png"), dpi=300)
+plt.close()
+
+# ===== 1:1 PLOT — TRAIN =====
+plt.figure(figsize=(8, 8))
+plt.scatter(y_train, y_pred_train, alpha=0.8, edgecolor="black", s=60, label="Samples")
+
+vmin_tr = min(y_train.min(), y_pred_train.min())
+vmax_tr = max(y_train.max(), y_pred_train.max())
+plt.plot([vmin_tr, vmax_tr], [vmin_tr, vmax_tr], "r--", linewidth=2, label="1:1 Line")
+
+plt.xlabel("Observed Biomass (kg/ha)")
+plt.ylabel("Predicted Biomass (kg/ha)")
+plt.title("Observed vs Predicted Biomass (Train Set)")
+plt.legend(fontsize=12, frameon=True)
+plt.grid(True, linestyle="--", alpha=0.3)
+plt.tight_layout()
+plt.savefig(os.path.join(output_dir, "observed_vs_predicted_1to1_train.png"), dpi=300)
 plt.close()
 
 # =========================
