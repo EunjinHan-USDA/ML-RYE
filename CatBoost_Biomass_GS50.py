@@ -1,4 +1,4 @@
-# ---------- MUST BE FIRST: single-thread math & stable hashing for cross-OS determinism ----------
+ # ---------- MUST BE FIRST: single-thread math & stable hashing for cross-OS determinism ----------
 import os
 os.environ["PYTHONHASHSEED"] = "0"
 os.environ["OMP_NUM_THREADS"] = "1"
@@ -37,17 +37,12 @@ plt.rcParams.update({
 # PATHS & INPUTS
 # =========================
 CSV_PATH = "/Users/utsabghimire/Downloads/SCINet/Updated_rye_datbase_format_all_data/July26_Omit_Yes_and_Maybe_646_Rows_with_Biomass_and_CN_Ratio_Averaged_7.csv"
-OUTPUT_DIR = "AUG26_Biomass_yesNMAYBE_GS50_CatBOOST_outputss"
+OUTPUT_DIR = "AUG27_Biomass_yesNMAYBE_GS50_CatBOOST_outputss"
 os.makedirs(OUTPUT_DIR, exist_ok=True)
 
 INPUT_FEATURES = [
     "growing_days", "N_rate_fall.kg_ha", "N_rate_spring.kg_ha", "zone",
-    "GS0_20avgSrad", "GS0_20cRain",
-    "GS20_30avgSrad", "GS20_30cRain",
-    "GS30_40avgSrad", "GS30_40cRain",
-    "GS40_50avgSrad", "GS40_50cRain",
-    "GS50avgSrad", "GS50cRain",
-    "FallcumGDD", "SpringcumGDD",
+    "FallcumGDD", "SpringcumGDD", "GS0_20avgSrad", "GS0_20cRain","GS20_30avgSrad", "GS20_30cRain", "GS30_40avgSrad", "GS30_40cRain", "GS40_50avgSrad", "GS40_50cRain","GS50avgSrad", "GS50cRain",
     "OM (%/100)", "Sand",  "Clay",
     "legume_preceding", "planting_method"
 ]
@@ -69,6 +64,9 @@ X[CAT_FEATURES] = X[CAT_FEATURES].fillna("missing").astype(str)
 
 # =========================
 # SPLIT (PIN EXACT ROWS ACROSS RUNS/OS)
+# =========================
+# =========================
+# SPLIT (PIN EXACT ROWS ACROSS RUNS/OS, regenerate if dataset changes)
 # =========================
 split_path = os.path.join(OUTPUT_DIR, "fixed_split_idx.npz")
 all_idx = np.arange(len(X))
@@ -95,6 +93,7 @@ y_train, y_test = y.iloc[train_idx].copy(), y.iloc[test_idx].copy()
 
 print(f"Total samples after filtering: {len(df)}")
 print(f"Training samples: {len(X_train)}, Testing samples: {len(X_test)}")
+
 
 # CatBoost needs categorical column indices (0-based)
 cat_idx = [X_train.columns.get_loc(c) for c in CAT_FEATURES]
