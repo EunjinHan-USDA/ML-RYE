@@ -73,18 +73,31 @@ X[cat_features] = X[cat_features].fillna("missing").astype(str)
 # =========================
 # We'll fix and reuse the exact indices to guarantee same rows across OS/runs
 split_path = os.path.join(output_dir, "fixed_split_idx.npz")
+all_idx = np.arange(len(X))
+
 if os.path.exists(split_path):
     npz = np.load(split_path, allow_pickle=False)
     train_idx, test_idx = npz["train_idx"], npz["test_idx"]
+
+    # 🔄 Regenerate if dataset size changed
+    if len(train_idx) + len(test_idx) != len(all_idx):
+        print("⚠️ Dataset size changed — regenerating 80/20 split")
+        train_idx, test_idx = train_test_split(
+            all_idx, test_size=0.20, random_state=SEED, shuffle=True
+        )
+        np.savez_compressed(split_path, train_idx=train_idx, test_idx=test_idx)
 else:
-    all_idx = np.arange(len(X))
-    X_tr, X_te, y_tr, y_te, train_idx, test_idx = train_test_split(
-        X, y, all_idx, test_size=0.20, random_state=SEED, shuffle=True
+    train_idx, test_idx = train_test_split(
+        all_idx, test_size=0.20, random_state=SEED, shuffle=True
     )
     np.savez_compressed(split_path, train_idx=train_idx, test_idx=test_idx)
 
 X_train_raw, X_test_raw = X.iloc[train_idx].copy(), X.iloc[test_idx].copy()
 y_train, y_test = y.iloc[train_idx].copy(), y.iloc[test_idx].copy()
+
+print(f"Total samples: {len(X)}")
+print(f"Train: {len(X_train_raw)}, Test: {len(X_test_raw)}")
+
 
 # =========================
 # ONE-HOT ENCODING (STABLE)
