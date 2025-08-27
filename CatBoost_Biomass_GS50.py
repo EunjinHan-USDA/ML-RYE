@@ -71,13 +71,22 @@ X[CAT_FEATURES] = X[CAT_FEATURES].fillna("missing").astype(str)
 # SPLIT (PIN EXACT ROWS ACROSS RUNS/OS)
 # =========================
 split_path = os.path.join(OUTPUT_DIR, "fixed_split_idx.npz")
+all_idx = np.arange(len(X))
+
 if os.path.exists(split_path):
     npz = np.load(split_path, allow_pickle=False)
     train_idx, test_idx = npz["train_idx"], npz["test_idx"]
+
+    # 🔄 Check if stored indices still match dataset size
+    if len(train_idx) + len(test_idx) != len(all_idx):
+        print("⚠️ Dataset size changed — regenerating 80/20 split")
+        train_idx, test_idx = train_test_split(
+            all_idx, test_size=0.20, random_state=SEED, shuffle=True
+        )
+        np.savez_compressed(split_path, train_idx=train_idx, test_idx=test_idx)
 else:
-    all_idx = np.arange(len(X))
-    _, _, _, _, train_idx, test_idx = train_test_split(
-        X, y, all_idx, test_size=0.20, random_state=SEED, shuffle=True
+    train_idx, test_idx = train_test_split(
+        all_idx, test_size=0.20, random_state=SEED, shuffle=True
     )
     np.savez_compressed(split_path, train_idx=train_idx, test_idx=test_idx)
 
