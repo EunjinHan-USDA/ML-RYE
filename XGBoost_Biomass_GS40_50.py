@@ -284,10 +284,6 @@ plt.tight_layout()
 plt.savefig(os.path.join(output_dir, "shap_summary_dot.png"), dpi=300)
 plt.close()
 
-# =========================
-# Final hash (for reproducibility)
-# =========================
-pred_hash = hashlib.md5(y_pred.astype(np.float64).tobytes()).hexdigest()
-print("prediction_hash:", pred_hash)
+
 
 print(f"✅ All outputs saved in: {output_dir}")
