@@ -1,4 +1,4 @@
- # ---------- MUST BE FIRST: single-thread math & stable hashing for cross-OS determinism ----------
+# ---------- MUST BE FIRST: single-thread math & stable hashing for cross-OS determinism ----------
 import os
 os.environ["PYTHONHASHSEED"] = "0"
 os.environ["OMP_NUM_THREADS"] = "1"
@@ -37,12 +37,12 @@ plt.rcParams.update({
 # PATHS & INPUTS
 # =========================
 CSV_PATH = "/Users/utsabghimire/Downloads/SCINet/Updated_rye_datbase_format_all_data/July26_Omit_Yes_and_Maybe_646_Rows_with_Biomass_and_CN_Ratio_Averaged_7.csv"
-OUTPUT_DIR = "AUG27_Biomass_yesNMAYBE_GS50_CatBOOST_outputss"
+OUTPUT_DIR = "AUG30_GS50_CatBOOST_outputss"
 os.makedirs(OUTPUT_DIR, exist_ok=True)
 
 INPUT_FEATURES = [
     "growing_days", "N_rate_fall.kg_ha", "N_rate_spring.kg_ha", "zone",
-    "FallcumGDD", "SpringcumGDD", "GS0_20avgSrad", "GS0_20cRain","GS20_30avgSrad", "GS20_30cRain", "GS30_40avgSrad", "GS30_40cRain", "GS40_50avgSrad", "GS40_50cRain","GS50avgSrad", "GS50cRain",
+    "FallcumGDD", "SpringcumGDD", "GS0_20avgSrad", "GS0_20cRain","GS20_30avgSrad", "GS20_30cRain", "GS30_40avgSrad", "GS30_40cRain","GS40_50avgSrad", "GS40_50cRain","GS50avgSrad", "GS50cRain",
     "OM (%/100)", "Sand",  "Clay",
     "legume_preceding", "planting_method"
 ]
@@ -68,28 +68,16 @@ X[CAT_FEATURES] = X[CAT_FEATURES].fillna("missing").astype(str)
 # =========================
 # SPLIT (PIN EXACT ROWS ACROSS RUNS/OS, regenerate if dataset changes)
 # =========================
-split_path = os.path.join(OUTPUT_DIR, "fixed_split_idx.npz")
 all_idx = np.arange(len(X))
-
-if os.path.exists(split_path):
-    npz = np.load(split_path, allow_pickle=False)
-    train_idx, test_idx = npz["train_idx"], npz["test_idx"]
-
-    # 🔄 Check if stored indices still match dataset size
-    if len(train_idx) + len(test_idx) != len(all_idx):
-        print("⚠️ Dataset size changed — regenerating 80/20 split")
-        train_idx, test_idx = train_test_split(
-            all_idx, test_size=0.20, random_state=SEED, shuffle=True
-        )
-        np.savez_compressed(split_path, train_idx=train_idx, test_idx=test_idx)
-else:
-    train_idx, test_idx = train_test_split(
-        all_idx, test_size=0.20, random_state=SEED, shuffle=True
-    )
-    np.savez_compressed(split_path, train_idx=train_idx, test_idx=test_idx)
+train_idx, test_idx = train_test_split(
+    all_idx, test_size=0.30, random_state=SEED, shuffle=True
+)
 
 X_train, X_test = X.iloc[train_idx].copy(), X.iloc[test_idx].copy()
 y_train, y_test = y.iloc[train_idx].copy(), y.iloc[test_idx].copy()
+
+print(f"Total samples after filtering: {len(df)}")
+print(f"Training samples: {len(X_train)}, Testing samples: {len(X_test)}")
 
 print(f"Total samples after filtering: {len(df)}")
 print(f"Training samples: {len(X_train)}, Testing samples: {len(X_test)}")
@@ -116,11 +104,15 @@ for q in quantiles:
     print(f"\n🔁 Training quantile {q}")
     model = CatBoostRegressor(
         loss_function=f"Quantile:alpha={q}",
-        iterations=500,
-        learning_rate=0.1,
-        depth=6,
-        random_seed=SEED,     # fixed seed
-        thread_count=1,       # single-thread = deterministic
+        iterations=500,        
+        learning_rate=0.03,
+        depth=4,
+        l2_leaf_reg=10,
+        random_seed=SEED,
+        thread_count=1,         # single-thread deterministic
+        od_type="Iter",         # early stopping based on eval_set
+        od_wait=50,             # stop if no improvement after 50 iters
+        use_best_model=True,    # rollback to best iteration
         verbose=False
     )
     model.fit(train_pool, eval_set=test_pool, verbose=False)
@@ -187,7 +179,7 @@ max_t = max(results_df["actual_biomass"].max(), results_df["pred_50th"].max())
 plt.plot([min_t, max_t], [min_t, max_t], color="red", linestyle="--", linewidth=2, label="1:1 Line")
 plt.xlabel("Observed Biomass (kg/ha)")
 plt.ylabel("Predicted Biomass (kg/ha)")
-plt.title("1:1 Plot (Test Set, Median Prediction)")
+plt.title("CatBoost Observed vs Predicted Biomass")
 plt.legend(); plt.grid(True, linestyle="--", alpha=0.4)
 plt.tight_layout()
 plt.savefig(os.path.join(OUTPUT_DIR, "median_prediction_1to1_test.png"), dpi=300)
