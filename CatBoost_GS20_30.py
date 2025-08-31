@@ -37,7 +37,7 @@ plt.rcParams.update({
 # PATHS & INPUTS
 # =========================
 CSV_PATH = "/Users/utsabghimire/Downloads/SCINet/Updated_rye_datbase_format_all_data/July26_Omit_Yes_and_Maybe_646_Rows_with_Biomass_and_CN_Ratio_Averaged_7.csv"
-OUTPUT_DIR = "AUG27_Biomass_yesNMAYBE_GS20_30_CatBOOST_outputss"
+OUTPUT_DIR = "AUG30_GS20_30_CatBOOST_outputss"
 os.makedirs(OUTPUT_DIR, exist_ok=True)
 
 INPUT_FEATURES = [
@@ -179,7 +179,7 @@ max_t = max(results_df["actual_biomass"].max(), results_df["pred_50th"].max())
 plt.plot([min_t, max_t], [min_t, max_t], color="red", linestyle="--", linewidth=2, label="1:1 Line")
 plt.xlabel("Observed Biomass (kg/ha)")
 plt.ylabel("Predicted Biomass (kg/ha)")
-plt.title("1:1 Plot (Test Set, Median Prediction)")
+plt.title("CatBoost Observed vs Predicted Biomass")
 plt.legend(); plt.grid(True, linestyle="--", alpha=0.4)
 plt.tight_layout()
 plt.savefig(os.path.join(OUTPUT_DIR, "median_prediction_1to1_test.png"), dpi=300)
