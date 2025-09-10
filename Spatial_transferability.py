@@ -284,8 +284,10 @@ def summarize_transfer(train_mask, test_mask, train_label, test_label, cat_featu
         "Train Samples": len(X_tr),
         "Test Samples":  len(X_te),
         "Train R²": r2_tr,
+        "Train RMSE": rmse_tr
         "Train %RMSE": pct_tr,
         "Test R²": r2_te,
+        "Test RMSE": rmse_te
         "Test %RMSE": pct_te
     }
     return row
